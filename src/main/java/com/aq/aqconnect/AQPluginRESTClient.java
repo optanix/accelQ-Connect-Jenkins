@@ -7,6 +7,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
@@ -55,10 +56,14 @@ public class AQPluginRESTClient {
         return BASE_URL;
     }
 
+    public String getResultExternalAccessURL(String jobPid) {
+        return String.format(getBaseURL() + AQPluginConstants.EXT_JOB_WEB_LINK, TENANT_CODE, PROJECT_NAME, jobPid);
+    }
+
     public void setUpBaseURL(String baseURL) {
         BASE_URL = baseURL.charAt(baseURL.length() - 1) == '/'?(baseURL):(baseURL + '/');
         API_ENDPOINT =  BASE_URL + "awb/api/%s/%s/";
-        
+
         LOGIN_URL = BASE_URL + "awb/api/aq_global/security/login";
         USERS_URL = API_ENDPOINT + AQPluginConstants.API_VERSION + "/conf/users";
         JOB_TRIGGER_URL = API_ENDPOINT + AQPluginConstants.API_VERSION + "/test-exec/jobs/%s/trigger-ci";
@@ -96,13 +101,17 @@ public class AQPluginRESTClient {
         }
     }
 
-    public JSONObject triggerJob(long jobPid) {
+    public JSONObject triggerJob(long jobPid, String jsonPayload) {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpPut httpPut = new HttpPut(String.format(JOB_TRIGGER_URL, TENANT_CODE, PROJECT_NAME, Long.toString(jobPid)));
         httpPut.addHeader("User-Agent", AQPluginConstants.USER_AGENT);
         httpPut.addHeader("access_token", ACCESS_TOKEN);
         httpPut.addHeader("client_id", CLIENT_ID);
         httpPut.addHeader("refresh_token", REFRESH_TOKEN);
+        if(jsonPayload != null && !jsonPayload.equals("")) {
+            StringEntity requestEntity = new StringEntity(jsonPayload, org.apache.http.entity.ContentType.APPLICATION_JSON);
+            httpPut.setEntity(requestEntity);
+        }
         try {
             CloseableHttpResponse httpResponse = httpClient.execute(httpPut);
 
