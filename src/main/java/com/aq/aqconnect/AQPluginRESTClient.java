@@ -1,5 +1,6 @@
 package com.aq.aqconnect;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -7,18 +8,25 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.ssl.TrustStrategy;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import javax.net.ssl.SSLContext;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,18 +63,43 @@ public class AQPluginRESTClient {
         return BASE_URL;
     }
 
+    public String getResultExternalAccessURL(String jobPid) {
+        return String.format(getBaseURL() + AQPluginConstants.EXT_JOB_WEB_LINK, TENANT_CODE, PROJECT_NAME, jobPid);
+    }
+
     public void setUpBaseURL(String baseURL) {
         BASE_URL = baseURL.charAt(baseURL.length() - 1) == '/'?(baseURL):(baseURL + '/');
         API_ENDPOINT =  BASE_URL + "awb/api/%s/%s/";
-        
+
         LOGIN_URL = BASE_URL + "awb/api/aq_global/security/login";
         USERS_URL = API_ENDPOINT + AQPluginConstants.API_VERSION + "/conf/users";
         JOB_TRIGGER_URL = API_ENDPOINT + AQPluginConstants.API_VERSION + "/test-exec/jobs/%s/trigger-ci";
         JOB_SUMMARY_URL = API_ENDPOINT + AQPluginConstants.API_VERSION + "/test-exec/runs/%s?onlySummary=true";
     }
 
+    private CloseableHttpClient getHttpsClient() {
+        try {
+            SSLContext sslContext = new SSLContextBuilder()
+                    .loadTrustMaterial(null, new TrustStrategy() {
+                        @Override
+                        public boolean isTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+                            return true;
+                        }
+                    }).build();
+
+            CloseableHttpClient client = HttpClients.custom()
+                    .setSSLContext(sslContext)
+                    .setSSLHostnameVerifier(new NoopHostnameVerifier())
+                    .build();
+
+            return client;
+        } catch(Exception e) {
+            return null;
+        }
+    }
+
     public JSONObject getJobSummary(long jobPid) {
-        CloseableHttpClient httpClient = HttpClients.createDefault();
+        CloseableHttpClient httpClient = getHttpsClient();
         HttpGet httpGet = new HttpGet(String.format(JOB_SUMMARY_URL, TENANT_CODE, PROJECT_NAME, Long.toString(jobPid)));
         httpGet.addHeader("User-Agent", AQPluginConstants.USER_AGENT);
         httpGet.addHeader("access_token", ACCESS_TOKEN);
@@ -96,13 +129,17 @@ public class AQPluginRESTClient {
         }
     }
 
-    public JSONObject triggerJob(long jobPid) {
-        CloseableHttpClient httpClient = HttpClients.createDefault();
+    public JSONObject triggerJob(long jobPid, String jsonPayload) {
+        CloseableHttpClient httpClient = getHttpsClient();
         HttpPut httpPut = new HttpPut(String.format(JOB_TRIGGER_URL, TENANT_CODE, PROJECT_NAME, Long.toString(jobPid)));
         httpPut.addHeader("User-Agent", AQPluginConstants.USER_AGENT);
         httpPut.addHeader("access_token", ACCESS_TOKEN);
         httpPut.addHeader("client_id", CLIENT_ID);
         httpPut.addHeader("refresh_token", REFRESH_TOKEN);
+        if(jsonPayload != null && !jsonPayload.equals("")) {
+            StringEntity requestEntity = new StringEntity(jsonPayload, org.apache.http.entity.ContentType.APPLICATION_JSON);
+            httpPut.setEntity(requestEntity);
+        }
         try {
             CloseableHttpResponse httpResponse = httpClient.execute(httpPut);
 
@@ -127,7 +164,7 @@ public class AQPluginRESTClient {
         }
     }
     public List<String> getUsers() {
-        CloseableHttpClient httpClient = HttpClients.createDefault();
+        CloseableHttpClient httpClient = getHttpsClient();
         HttpGet httpGet = new HttpGet(String.format(USERS_URL, TENANT_CODE, PROJECT_NAME));
         httpGet.addHeader("User-Agent", AQPluginConstants.USER_AGENT);
         httpGet.addHeader("access_token", ACCESS_TOKEN);
@@ -162,14 +199,14 @@ public class AQPluginRESTClient {
     }
 
     public boolean doLogin(String userName, String secretKey, String projectName) {
-        CloseableHttpClient httpClient = HttpClients.createDefault();
+        CloseableHttpClient httpClient = getHttpsClient();
         HttpPost httpPost = new HttpPost(LOGIN_URL);
         httpPost.addHeader("User-Agent", AQPluginConstants.USER_AGENT);
         httpPost.addHeader("invalidate-active-tokens", "true");
 
         List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
         urlParameters.add(new BasicNameValuePair("username", userName));
-        urlParameters.add(new BasicNameValuePair("password", secretKey));
+        urlParameters.add(new BasicNameValuePair("password", new String(Base64.encodeBase64String(secretKey.getBytes()))));
 
         try {
             HttpEntity postParams = new UrlEncodedFormEntity(urlParameters);

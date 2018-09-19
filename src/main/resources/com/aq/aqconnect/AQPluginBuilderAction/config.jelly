@@ -15,4 +15,7 @@
     <f:entry title="Job ID" field="jobId">
         <f:textbox />
     </f:entry>
+    <f:entry title="Run Parameters" field="runParamStr">
+        <f:textbox />
+    </f:entry>
 </j:jelly>
