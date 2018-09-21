@@ -136,6 +136,7 @@ public class AQPluginRESTClient {
         httpPut.addHeader("access_token", ACCESS_TOKEN);
         httpPut.addHeader("client_id", CLIENT_ID);
         httpPut.addHeader("refresh_token", REFRESH_TOKEN);
+        httpPut.addHeader("Content-Type", "application/json");
         if(jsonPayload != null && !jsonPayload.equals("")) {
             StringEntity requestEntity = new StringEntity(jsonPayload, org.apache.http.entity.ContentType.APPLICATION_JSON);
             httpPut.setEntity(requestEntity);
