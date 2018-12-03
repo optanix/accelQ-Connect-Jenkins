@@ -26,6 +26,7 @@
          ~ hpi-plugin.version: The HPI Maven Plugin version used by the plugin..
          ~ stapler-plugin.version: The Stapler Maven plugin version required by the plugin.
     -->
+    <extn>hpi</extn>
   </properties>
 
   <name>accel Connect</name>
