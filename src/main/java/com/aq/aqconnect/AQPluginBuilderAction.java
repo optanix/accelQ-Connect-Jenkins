@@ -9,7 +9,7 @@ import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
-import hudson.tasks.Recorder;
+import hudson.tasks.Builder;
 import jenkins.tasks.SimpleBuildStep;
 import org.json.simple.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -21,7 +21,7 @@ import java.io.PrintStream;
 /**
  * Created by Vinay on 7/31/2016.
  */
-public class AQPluginBuilderAction extends Recorder implements SimpleBuildStep {
+public class AQPluginBuilderAction extends Builder implements SimpleBuildStep {
 
     private String jobId;
     private String userName;
@@ -65,11 +65,12 @@ public class AQPluginBuilderAction extends Recorder implements SimpleBuildStep {
         }
         return json.toJSONString();
     }
-    
-    @Override
-    public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl)super.getDescriptor();
-    }
+
+
+//    @Override
+//    public DescriptorImpl getDescriptor() {
+//        return (DescriptorImpl)super.getDescriptor();
+//    }
 
     @Override
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath workspace, @Nonnull Launcher launcher, @Nonnull TaskListener listener) throws InterruptedException, IOException {
@@ -77,14 +78,18 @@ public class AQPluginBuilderAction extends Recorder implements SimpleBuildStep {
         //login via AQ REST client
         AQPluginRESTClient aqPluginRESTClient = AQPluginRESTClient.getInstance();
         aqPluginRESTClient.setUpBaseURL(this.appURL.trim());
+
         if(aqPluginRESTClient.doLogin(this.userName, this.secretKey, this.projectName)) {
             out.println(AQPluginConstants.LOG_DELIMITER + "Connection Successful");
             out.println();
-            String runParamJsonPayload = getRunParamJsonPayload(this.runParamStr);
+
+            String runParamJsonPayload = getRunParamJsonPayload(run.getEnvironment(listener).expand(this.runParamStr));
             JSONObject realJobObj = aqPluginRESTClient.triggerJob(Integer.parseInt(jobId), runParamJsonPayload);
+
             if(realJobObj.get("cause") != null) {
                 throw new AQPluginException((String) realJobObj.get("cause"));
             }
+
             long realJobPid = (long) realJobObj.get("pid");
             long passCount = 0, failCount = 0, runningCount = 0, totalCount = 0, notRunCount = 0;
             String jobPurpose = (String) realJobObj.get("purpose");
@@ -93,6 +98,7 @@ public class AQPluginBuilderAction extends Recorder implements SimpleBuildStep {
             int attempt = 0;
             out.println("Purpose: " + jobPurpose);
             out.println();
+
             do {
                 summaryObj = aqPluginRESTClient.getJobSummary(realJobPid);
                 if(summaryObj.get("cause") != null) {
@@ -143,7 +149,7 @@ public class AQPluginBuilderAction extends Recorder implements SimpleBuildStep {
     }
 
     @Extension
-    public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> {
+    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
         public DescriptorImpl() {
             load();
