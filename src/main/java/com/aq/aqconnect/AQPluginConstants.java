@@ -9,7 +9,7 @@ public class AQPluginConstants {
     public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36";
 
     public static final long JOB_STATUS_POLL_TIME = 30 * 1000;
-    public static final int JOB_PICKUP_RETRY_COUNT = 6;
+    public static final int JOB_PICKUP_RETRY_COUNT = 6 * 1000;
 
     public static final String JOB_WEB_LINK = "#/forward?entityType=9&resultId=%s";
     public static final String EXT_JOB_WEB_LINK = "#/resultext?tenant=%s&project=%s&resultId=%s";

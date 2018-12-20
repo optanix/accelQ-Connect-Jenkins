@@ -83,7 +83,14 @@ public class AQPluginBuilderAction extends Builder implements SimpleBuildStep {
             out.println(AQPluginConstants.LOG_DELIMITER + "Connection Successful");
             out.println();
 
-            String runParamJsonPayload = getRunParamJsonPayload(run.getEnvironment(listener).expand(this.runParamStr));
+
+            String parseArgs = run.getEnvironment(listener).expand(this.runParamStr);
+            out.println("Parsed Args: " + parseArgs);
+
+            String runParamJsonPayload = getRunParamJsonPayload(parseArgs);
+
+            out.println("Json Payload: "+runParamJsonPayload);
+
             JSONObject realJobObj = aqPluginRESTClient.triggerJob(Integer.parseInt(jobId), runParamJsonPayload);
 
             if(realJobObj.get("cause") != null) {
