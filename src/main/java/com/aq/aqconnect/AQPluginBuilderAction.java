@@ -138,6 +138,10 @@ public class AQPluginBuilderAction extends Builder implements SimpleBuildStep {
             listener.hyperlink(resultAccessURL, "link");
             out.println(" for more details");
             out.println();
+out.println("Heya");
+Long total = passCount + failCount + notRunCount;
+out.println("Total Tests: " + total);
+out.println("Pass rate: " + (passCount/total)*100);
 
             if(failCount > 0
                     || jobStatus.equals(AQPluginConstants.TEST_JOB_STATUS.ABORTED.getStatus().toUpperCase())
