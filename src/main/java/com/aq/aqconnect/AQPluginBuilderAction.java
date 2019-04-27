@@ -18,6 +18,8 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.PrintStream;
 
+import com.optx.es.EsRestClient;
+
 /**
  * Created by Vinay on 7/31/2016.
  */
@@ -138,12 +140,24 @@ public class AQPluginBuilderAction extends Builder implements SimpleBuildStep {
             listener.hyperlink(resultAccessURL, "link");
             out.println(" for more details");
             out.println();
-out.println("Heya");
-Long total = passCount + failCount + notRunCount;
-out.println("Total Tests: " + total);
-out.println("Pass rate: " + (passCount/total)*100);
 
-            if(failCount > 0
+            float fPassCount = (float) passCount;
+            float fFailCount = (float) failCount;
+            float fNotRunCount = (float) notRunCount;
+
+            float total = fPassCount + fFailCount + fNotRunCount;
+            out.println("Total Tests: " + total);
+            float passRate = (fPassCount/total)*100;
+            out.println("Pass rate:   " + passRate);
+
+            out.println("Job PID: " + realJobPid);
+            out.println("Summary Object: ");
+            out.println(summaryObj);
+
+            EsRestClient esRestClient = new EsRestClient();
+            esRestClient.insertData(realJobPid, summaryObj);
+
+            if(passRate < 80
                     || jobStatus.equals(AQPluginConstants.TEST_JOB_STATUS.ABORTED.getStatus().toUpperCase())
                     || jobStatus.equals(AQPluginConstants.TEST_JOB_STATUS.FAILED.getStatus().toUpperCase())) {
                 throw new AQPluginException(AQPluginConstants.LOG_DELIMITER + "Run Failed");
