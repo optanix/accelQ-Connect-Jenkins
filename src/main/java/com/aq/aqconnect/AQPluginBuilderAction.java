@@ -31,11 +31,12 @@ public class AQPluginBuilderAction extends Builder implements SimpleBuildStep {
     private String projectName;
     private String appURL;
 
-    //run params
+    // Run Parameters
     private String runParamStr;
 
     @DataBoundConstructor
     public AQPluginBuilderAction(String jobId, String userName, String secretKey, String projectName, String appURL, String runParamStr) {
+
         this.jobId = jobId;
         this.userName = userName;
         this.secretKey = secretKey;
@@ -69,32 +70,33 @@ public class AQPluginBuilderAction extends Builder implements SimpleBuildStep {
     }
 
 
-//    @Override
-//    public DescriptorImpl getDescriptor() {
-//        return (DescriptorImpl)super.getDescriptor();
-//    }
-
     @Override
-    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath workspace, @Nonnull Launcher launcher, @Nonnull TaskListener listener) throws InterruptedException, IOException {
+    public void perform(
+        @Nonnull Run<?, ?> run, 
+        @Nonnull FilePath workspace, 
+        @Nonnull Launcher launcher, 
+        @Nonnull TaskListener listener) 
+          throws 
+            InterruptedException, 
+            IOException {
+
         PrintStream out = listener.getLogger();
-        //login via AQ REST client
+        // Login via AQ REST client
         AQPluginRESTClient aqPluginRESTClient = AQPluginRESTClient.getInstance();
         aqPluginRESTClient.setUpBaseURL(this.appURL.trim());
 
         if(aqPluginRESTClient.doLogin(this.userName, this.secretKey, this.projectName)) {
+
             out.println(AQPluginConstants.LOG_DELIMITER + "Connection Successful");
             out.println();
-
 
             String parseArgs = run.getEnvironment(listener).expand(this.runParamStr);
             out.println("Parsed Args: " + parseArgs);
 
             String runParamJsonPayload = getRunParamJsonPayload(parseArgs);
-
-            out.println("Json Payload: "+runParamJsonPayload);
+            out.println("Json Payload: " + runParamJsonPayload);
 
             JSONObject realJobObj = aqPluginRESTClient.triggerJob(Integer.parseInt(jobId), runParamJsonPayload);
-
             if(realJobObj.get("cause") != null) {
                 throw new AQPluginException((String) realJobObj.get("cause"));
             }
@@ -119,22 +121,27 @@ public class AQPluginBuilderAction extends Builder implements SimpleBuildStep {
                 passCount = (Long) summaryObj.get("pass");
                 failCount = (Long) summaryObj.get("fail");
                 notRunCount = (Long) summaryObj.get("notRun");
-                out.println("Status: " + summaryObj.get("status"));
-                out.println("Pass: " + passCount);
-                out.println("Fail: " + failCount);
-                //out.println("Running: " + runningCount);
+
+                out.println("Status:  " + summaryObj.get("status"));
+                out.println("Pass:    " + passCount);
+                out.println("Fail:    " + failCount);
                 out.println("Not Run: " + notRunCount);
                 out.println();
+
                 jobStatus = ((String) summaryObj.get("status")).toUpperCase();
                 if(jobStatus.equals(AQPluginConstants.TEST_JOB_STATUS.SCHEDULED.getStatus().toUpperCase()))
                     ++attempt;
+
                 if(attempt == AQPluginConstants.JOB_PICKUP_RETRY_COUNT) {
                     throw new AQPluginException("No agent available to pickup the job");
                 }
+
                 Thread.sleep(AQPluginConstants.JOB_STATUS_POLL_TIME);
+
             } while(!jobStatus.equals(AQPluginConstants.TEST_JOB_STATUS.COMPLETED.getStatus().toUpperCase())
                     && !jobStatus.equals(AQPluginConstants.TEST_JOB_STATUS.ABORTED.getStatus().toUpperCase())
                     && !jobStatus.equals(AQPluginConstants.TEST_JOB_STATUS.FAILED.getStatus().toUpperCase()));
+
             String resultAccessURL = aqPluginRESTClient.getResultExternalAccessURL(Long.toString(realJobPid));
             out.print("Click on this ");
             listener.hyperlink(resultAccessURL, "link");
@@ -150,14 +157,9 @@ public class AQPluginBuilderAction extends Builder implements SimpleBuildStep {
             float passRate = (fPassCount/total)*100;
             out.println("Pass rate:   " + passRate);
 
-            //final EnvVars env = build.getEnvironment(listener);
             String awsEsUrl = run.getEnvironment(listener).get("AWS_ES_URL");
-            //String awsEsUrl = env.get("AWS_ES_URL");
+            out.println("ES URL:  " + awsEsUrl);
             out.println("Job PID: " + realJobPid);
-            //String awsEsUrl = System.getenv("AWS_ES_URL");
-            out.println("ES URL: " + awsEsUrl);
-            //out.println("Summary Object: ");
-            //out.println(summaryObj);
 
             EsRestClient esRestClient = new EsRestClient();
             esRestClient.insertData(realJobPid, summaryObj, awsEsUrl);
@@ -185,17 +187,6 @@ public class AQPluginBuilderAction extends Builder implements SimpleBuildStep {
             load();
         }
 
-        /* public FormValidation doCheckJobId(@QueryParameter String jobId) {
-            try{
-                int jobPid = Integer.parseInt(jobId);
-                if(jobPid <= 0)
-                    return FormValidation.error("Job ID must be a positive number");
-                return FormValidation.ok();
-            } catch(Exception e) {
-                return FormValidation.error("Job ID should be an Integer");
-            }
-        } */
-
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             return true;
         }
@@ -203,7 +194,5 @@ public class AQPluginBuilderAction extends Builder implements SimpleBuildStep {
         public String getDisplayName() {
             return "accelQ Connect";
         }
-
     }
-
 }

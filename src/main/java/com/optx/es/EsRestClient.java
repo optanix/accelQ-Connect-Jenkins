@@ -15,19 +15,10 @@ public class EsRestClient {
   private static final EsRestClient esRestClient = new EsRestClient();
   private final JSONParser jsonParser = new JSONParser();
   public String jsonPayload;
-  //public String url;
-  //final EnvVars env = build.getEnvironment(listener);
-  //String awsEsUrl = env.get("AWS_ES_URL");
-  
   
   public JSONObject insertData(long jobPid, JSONObject jsonObject, String url) {
 
     jsonPayload = jsonObject.toString();
-    // String url = "http://localhost:9200/accelq006/" + jobPid + "/?";
-    // String url = "http://localhost:9200/accelq006/19415/?";
-    // String url = "http://localhost:9200/accelq011/?";
-    //url = System.getenv("AWS_ES_URL");
-    System.out.println("Url: " + url);
 
     HttpPost httpPost = new HttpPost(url);
     httpPost.addHeader("content-type","application/json");
