@@ -21,7 +21,8 @@ public class EsRestClient {
     jsonPayload = jsonObject.toString();
     // String url = "http://localhost:9200/accelq006/" + jobPid + "/?";
     // String url = "http://localhost:9200/accelq006/19415/?";
-    String url = "http://localhost:9200/accelq011/?";
+    // String url = "http://localhost:9200/accelq011/?";
+    String url = "http://10.30.1.64:32446/jenkins/accelq/?";
     System.out.println("Url: " + url);
 
     HttpPost httpPost = new HttpPost(url);
