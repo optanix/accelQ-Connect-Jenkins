@@ -158,11 +158,19 @@ public class AQPluginBuilderAction extends Builder implements SimpleBuildStep {
             out.println("Pass rate:   " + passRate);
 
             String awsEsUrl = run.getEnvironment(listener).get("AWS_ES_URL");
-            out.println("ES URL:  " + awsEsUrl);
+
+            String fullUrl = awsEsUrl;
+            if (awsEsUrl.endsWith("/")) {
+              fullUrl = awsEsUrl + "jenkins/accelq/?";
+            } else {
+              fullUrl = awsEsUrl + "/jenkins/accelq/?";
+            }
+
+            //out.println("ElasticSearch URL:  " + fullUrl);
             out.println("Job PID: " + realJobPid);
 
             EsRestClient esRestClient = new EsRestClient();
-            esRestClient.insertData(realJobPid, summaryObj, awsEsUrl);
+            esRestClient.insertData(realJobPid, summaryObj, fullUrl);
 
             if(passRate < 80
                     || jobStatus.equals(AQPluginConstants.TEST_JOB_STATUS.ABORTED.getStatus().toUpperCase())
