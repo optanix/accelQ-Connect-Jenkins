@@ -150,12 +150,17 @@ public class AQPluginBuilderAction extends Builder implements SimpleBuildStep {
             float passRate = (fPassCount/total)*100;
             out.println("Pass rate:   " + passRate);
 
+            //final EnvVars env = build.getEnvironment(listener);
+            String awsEsUrl = run.getEnvironment(listener).get("AWS_ES_URL");
+            //String awsEsUrl = env.get("AWS_ES_URL");
             out.println("Job PID: " + realJobPid);
-            out.println("Summary Object: ");
-            out.println(summaryObj);
+            //String awsEsUrl = System.getenv("AWS_ES_URL");
+            out.println("ES URL: " + awsEsUrl);
+            //out.println("Summary Object: ");
+            //out.println(summaryObj);
 
             EsRestClient esRestClient = new EsRestClient();
-            esRestClient.insertData(realJobPid, summaryObj);
+            esRestClient.insertData(realJobPid, summaryObj, awsEsUrl);
 
             if(passRate < 80
                     || jobStatus.equals(AQPluginConstants.TEST_JOB_STATUS.ABORTED.getStatus().toUpperCase())
