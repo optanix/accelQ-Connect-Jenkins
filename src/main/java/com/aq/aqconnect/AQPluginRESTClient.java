@@ -38,14 +38,14 @@ public class AQPluginRESTClient {
     private static final AQPluginRESTClient aqRESTClient = new AQPluginRESTClient();
     private final JSONParser jsonParser = new JSONParser();
 
-    //Security Tokens and Project related
+    // Security Tokens and Project related
     private String ACCESS_TOKEN;
     private String CLIENT_ID;
     private String REFRESH_TOKEN;
     private String TENANT_CODE;
     private String PROJECT_NAME;
 
-    //Base URL and extensions
+    // Base URL and extensions
     private static String BASE_URL;
     private static String API_ENDPOINT;
 
@@ -68,6 +68,7 @@ public class AQPluginRESTClient {
     }
 
     public void setUpBaseURL(String baseURL) {
+
         BASE_URL = baseURL.charAt(baseURL.length() - 1) == '/'?(baseURL):(baseURL + '/');
         API_ENDPOINT =  BASE_URL + "awb/api/%s/%s/";
 
@@ -78,6 +79,7 @@ public class AQPluginRESTClient {
     }
 
     private CloseableHttpClient getHttpsClient() {
+
         try {
             SSLContext sslContext = new SSLContextBuilder()
                     .loadTrustMaterial(null, new TrustStrategy() {

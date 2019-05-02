@@ -2,3 +2,5 @@
 /target/
 .idea
 aqconnect.iml
+*.swp
+temp*
